@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-from .engine import *
+from . import engine
+
 
 def main():
     print("Первая попытка запустить проект!\n***")
     while True:
-        welcome()
+        engine.welcome()
 
 if __name__ == "__main__":
     main()
