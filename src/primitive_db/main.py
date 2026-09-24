@@ -3,9 +3,8 @@ from . import engine
 
 
 def main():
-    print("Первая попытка запустить проект!\n***")
-    while True:
-        engine.welcome()
+    engine.run()
+    return 0
 
 if __name__ == "__main__":
     main()
