@@ -29,22 +29,28 @@ def run():
     print_help()
     
     while True:
-        actual_metadata = utils.load_metadata("db_meta.json")
+        db_file = "db_meta.json"
+        actual_metadata = utils.load_metadata(db_file)
         user_input = prompt.string("Введите команду: ")
         
         args = shlex.split(user_input)
 
         match args[0]:
-            case "create_table":
-                pass
+            case "create_table" | "drop_table" as cmd:
+                try:
+                    if cmd == "create_table":
+                        upd_metadata = core.create_table(actual_metadata)
+                    elif cmd == "drop_table":
+                        upd_metadata =  core.drop_table(actual_metadata)
+
+                    utils.save_metadata(db_file, upd_metadata)
+                except:
+                    print(f"Ошибка при выполнении функции {cmd}")
             case "list_tables":
-                pass
-            case "drop_table":
-                pass
+                core.list_tables(actual_metadata)
             case "help":
                 print_help()
             case "exit":
                 return
             case _:
                 print(f"Функции {args[0]} нет. Попробуйте снова.")
-

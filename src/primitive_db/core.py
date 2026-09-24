@@ -17,4 +17,5 @@ def drop_table(metadata, table_name):
     """
     pass
 
-
+def list_tables(metadata):
+    pass
