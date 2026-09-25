@@ -36,16 +36,24 @@ def run():
         args = shlex.split(user_input)
 
         match args[0]:
-            case "create_table" | "drop_table" as cmd:
+            case "create_table":
                 try:
-                    if cmd == "create_table":
-                        upd_metadata = core.create_table(actual_metadata, args[1], args[2:])
-                    elif cmd == "drop_table":
-                        upd_metadata =  core.drop_table(actual_metadata, args[1])
-
+                    upd_metadata = core.create_table(actual_metadata, args[1], args[2:])
                     utils.save_metadata(db_file, upd_metadata)
+                except (core.TableExistsError, core.TableArgumentsError) as e:
+                    print(e)
+                except:
+                    print(f'Возникла ошибка при выполнении функции create_table с "{e}"')
+                    
+            case "drop_table":
+                try:
+                    upd_metadata =  core.drop_table(actual_metadata, args[1])
+                    utils.save_metadata(db_file, upd_metadata)
+                except (core.TableNotExistsError) as e:
+                    print(e)
                 except Exception as e:
-                    print(f"Возникла ошибка при выполнении функции {cmd} с типом {e}")
+                    print(f'Возникла ошибка при выполнении функции drop_table с типом "{e}"')
+
             case "list_tables":
                 print(list(actual_metadata.keys()))
             case "help":

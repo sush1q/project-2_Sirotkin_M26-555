@@ -1,12 +1,24 @@
 
-class TableExists(Exception):
+class DBError(Exception):
     pass
 
-class TableNotExists(Exception):
-    pass
+class TableExistsError(DBError):
+    def __init__(self, table_name):
+        self.table_name = table_name
+    def __str__(self):
+        return f'Ошибка: Таблица "{self.table_name}" уже существует.'
 
-class TableArgumentsError(Exception):
-    pass
+class TableNotExistsError(DBError):
+    def __init__(self, table_name):
+        self.table_name = table_name
+    def __str__(self):
+        return f'Ошибка: Таблица "{self.table_name}" не существует.'
+
+class TableArgumentsError(DBError):
+    def __init__(self, args):
+        self.args = args
+    def __str__(self):
+        return f'Ошибка: Указаны некорректные типы для параметров "{self.args}".'
 
 def create_table(metadata:dict, table_name: str, columns: list):
     """
@@ -18,7 +30,7 @@ def create_table(metadata:dict, table_name: str, columns: list):
     !!! В случае, если столбец ID(уникальный ключ) не задается пользователем, то генерировать его самостоятельно.
     """
     if metadata.get(table_name) is not None:
-        raise TableExists
+        raise TableExistsError(table_name)
     inner_columns = columns.copy()
     
     id_column = "ID:int"
@@ -41,7 +53,7 @@ def drop_table(metadata: dict, table_name: str):
     Удаляет информацию о таблице из metadata и возвращает обновленный словарь.
     """
     if metadata.get(table_name) is None:
-        raise TableNotExists
+        raise TableNotExistsError(table_name)
     upd_metadata = metadata.copy()
     upd_metadata.pop(table_name)
     return upd_metadata
