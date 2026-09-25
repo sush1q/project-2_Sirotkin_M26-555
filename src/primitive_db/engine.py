@@ -39,15 +39,15 @@ def run():
             case "create_table" | "drop_table" as cmd:
                 try:
                     if cmd == "create_table":
-                        upd_metadata = core.create_table(actual_metadata)
+                        upd_metadata = core.create_table(actual_metadata, args[1], args[2:])
                     elif cmd == "drop_table":
-                        upd_metadata =  core.drop_table(actual_metadata)
+                        upd_metadata =  core.drop_table(actual_metadata, args[1])
 
                     utils.save_metadata(db_file, upd_metadata)
-                except:
-                    print(f"Ошибка при выполнении функции {cmd}")
+                except Exception as e:
+                    print(f"Возникла ошибка при выполнении функции {cmd} с типом {e}")
             case "list_tables":
-                core.list_tables(actual_metadata)
+                print(list(actual_metadata.keys()))
             case "help":
                 print_help()
             case "exit":

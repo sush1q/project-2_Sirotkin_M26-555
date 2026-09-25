@@ -1,5 +1,14 @@
 
-def create_table(metadata, table_name, columns):
+class TableExists(Exception):
+    pass
+
+class TableNotExists(Exception):
+    pass
+
+class TableArgumentsError(Exception):
+    pass
+
+def create_table(metadata:dict, table_name: str, columns: list):
     """
     Она должна принимать текущие метаданные, имя таблицы и список столбцов.
     Автоматически добавлять столбец ID:int в начало списка столбцов.
@@ -8,14 +17,31 @@ def create_table(metadata, table_name, columns):
     В случае успеха, обновлять словарь metadata и возвращать его.
     !!! В случае, если столбец ID(уникальный ключ) не задается пользователем, то генерировать его самостоятельно.
     """
-    pass
+    if metadata.get(table_name) is not None:
+        raise TableExists
+    inner_columns = columns.copy()
+    
+    id_column = "ID:int"
+    if inner_columns.count(id_column):
+        inner_columns.remove(id_column)
+    inner_columns.insert(0, id_column)
+    
+    table_data = dict({column.split(":")[0]: column.split(":")[1]  for column in inner_columns})
+    type_errors = [{k:v} for k,v in table_data.items() if v not in ["str", "bool", "int"]]
+    if type_errors:
+        raise TableArgumentsError(type_errors)
+    
+    upd_metadata = metadata.copy()
+    upd_metadata[table_name] = table_data
+    return upd_metadata
 
-def drop_table(metadata, table_name):
+def drop_table(metadata: dict, table_name: str):
     """
     Проверяет существование таблицы. Если таблицы нет, выводит ошибку.
     Удаляет информацию о таблице из metadata и возвращает обновленный словарь.
     """
-    pass
-
-def list_tables(metadata):
-    pass
+    if metadata.get(table_name) is None:
+        raise TableNotExists
+    upd_metadata = metadata.copy()
+    upd_metadata.pop(table_name)
+    return upd_metadata
