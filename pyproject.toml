@@ -8,21 +8,26 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "prompt (>=0.4.1,<0.5.0)"
+    "prompt>=0.4.1,<0.5.0",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1,<10.0.0",
+    "ruff>=0.16.8,<0.17.0",
+]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.12.15,<0.13.0"]
+build-backend = "uv_build"
 
-[tool.poetry]
-packages = [
-    { include = "src" },
-]
+[tool.uv.build-backend]
+module-name = "src"
+module-root = ""
 
-[tool.poetry.scripts]
+[project.scripts]
 project = "src.primitive_db.main:main"
+database = "src.primitive_db.main:main"
 
 [tool.ruff]
 line-length = 88
@@ -32,7 +37,7 @@ exclude = ["venv", ".venv", "dist", "__pycache__"]
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 ignore = []
-[dependency-groups]
-dev = [
-    "ruff (>=0.16.8,<0.17.0)"
-]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

@@ -1,19 +1,20 @@
 install:
-	poetry install
+	uv sync
 
 project:
-	poetry run project
+	uv run database
 
 build:
-	poetry build
+	uv build
 
 publish:
-	poetry publish --dry-run
+	uv publish --dry-run --trusted-publishing never
 
 package-install:
-	python3 -m pip install dist/*.whl --force-reinstall 
-# по заданию без --force-reinstall
+	uv pip install --python .venv/bin/python --reinstall dist/*.whl
 
 lint:
-	poetry run ruff check .
- 
+	uv run ruff check .
+
+test:
+	uv run python -m pytest -v
