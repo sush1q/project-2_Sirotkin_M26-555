@@ -1,5 +1,7 @@
 import json
+from pathlib import Path
 
+DATA_DIR = Path("data")
 
 def load_metadata(filepath):
     try:
@@ -11,3 +13,9 @@ def load_metadata(filepath):
 def save_metadata(filepath, data):
     with open(filepath, "w") as file:
         file.write(json.dumps(data))
+
+def load_table_data(table_name):
+    return load_metadata(f"{DATA_DIR}/{table_name}.json")
+
+def save_table_data(table_name, data):
+    save_metadata(f"{DATA_DIR}/{table_name}.json", data)

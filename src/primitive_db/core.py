@@ -57,3 +57,35 @@ def drop_table(metadata: dict, table_name: str):
     upd_metadata = metadata.copy()
     upd_metadata.pop(table_name)
     return upd_metadata
+
+def insert(metadata, table_name, values):
+    """
+    Проверяет, существует ли таблица.
+    Проверяет, что количество переданных значений соответствует количеству столбцов (минус ID).
+    Валидирует типы данных для каждого значения в соответствии со схемой в metadata.
+    Генерирует новый ID (например, max(IDs) + 1 или len(data) + 1).
+    Добавляет новую запись (в виде словаря) в данные таблицы и возвращает их.
+    """
+    pass
+
+def select(table_data, where_clause=None):
+    """
+    Если where_clause не задан, возвращает все данные.
+    Если задан (например, {'age': 28}), фильтрует и возвращает только подходящие записи.
+    """
+    pass
+
+def update(table_data, set_clause, where_clause):
+    """
+    Находит записи по where_clause.
+    Обновляет в найденных записях поля согласно set_clause.
+    Возвращает измененные данные.
+    """
+    pass
+
+def delete(table_data, where_clause):
+    """
+    Находит записи по where_clause и удаляет их.
+    Возвращает измененные данные.
+    """
+    pass
