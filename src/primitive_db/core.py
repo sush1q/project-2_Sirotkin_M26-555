@@ -69,6 +69,7 @@ def insert(metadata:dict, table_name:str, values:list):
     if table_name in metadata:
         raise TableNotExistsError(table_name)
     
+    
     pass
 
 def select(table_data, where_clause=None):
