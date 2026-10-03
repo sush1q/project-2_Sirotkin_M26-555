@@ -15,7 +15,8 @@ def save_metadata(filepath, data):
         file.write(json.dumps(data))
 
 def load_table_data(table_name):
-    return load_metadata(f"{DATA_DIR}/{table_name}.json")
+    table_data = load_metadata(f"{DATA_DIR}/{table_name}.json")
+    return table_data if table_data else []
 
 def save_table_data(table_name, data):
     save_metadata(f"{DATA_DIR}/{table_name}.json", data)

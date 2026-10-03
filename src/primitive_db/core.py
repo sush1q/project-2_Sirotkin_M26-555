@@ -77,24 +77,24 @@ def insert(metadata:dict, table_name:str, table_data:list, values:list):
         raise ValueError("Передано неверное количество значений")
     
     new_data = {}
-    new_data["ID"] = len(table_data) + 1
+    new_data["ID"] = len(table_data) + 1 # TODO: max все же лучше будет
     for i, item in enumerate(table_header.items()):
         column_name, column_type = item
         column_value = values[i]
         
-        if column_type == "bool":
+        if column_type == 'bool':
             if column_value.lower() in ["true", "false"]:
-                new_data[column_name] = column_value
+                new_data[column_name] = bool(column_value)
             else:
                 raise ValueError("Передано значение не подходящего типа")
         
-        if column_type == "int":
+        if column_type == 'int':
             try:
                 new_data[column_name] = int(column_value)
             except:
                 raise ValueError("Передано значение не подходящего типа")
-                
-        new_data[column_name] = column_value
+        if column_type == 'str':
+            new_data[column_name] = column_value
     
     table_data.append(new_data)
     return table_data
