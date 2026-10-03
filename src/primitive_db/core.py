@@ -20,6 +20,8 @@ class TableArgumentsError(DBError):
     def __str__(self):
         return f'Ошибка: Указаны некорректные типы для параметров "{self.args}".'
 
+ALLOWED_TYPES = ["str", "bool", "int"]
+
 def create_table(metadata:dict, table_name: str, columns: list):
     """
     Она должна принимать текущие метаданные, имя таблицы и список столбцов.
@@ -39,7 +41,7 @@ def create_table(metadata:dict, table_name: str, columns: list):
     inner_columns.insert(0, id_column)
     
     table_data = dict({column.split(":")[0]: column.split(":")[1]  for column in inner_columns})
-    type_errors = [{k:v} for k,v in table_data.items() if v not in ["str", "bool", "int"]]
+    type_errors = [{k:v} for k,v in table_data.items() if v not in ALLOWED_TYPES]
     if type_errors:
         raise TableArgumentsError(type_errors)
     
@@ -72,13 +74,31 @@ def insert(metadata:dict, table_name:str, table_data:list, values:list):
     table_header.pop("ID")
     
     if len(values) != len(table_header):
-        # raise 
-        pass # TODO
+        raise ValueError("Передано неверное количество значений")
     
+    new_data = {}
+    new_data["ID"] = len(table_data) + 1
+    for i, item in enumerate(table_header.items()):
+        column_name, column_type = item
+        column_value = values[i]
+        
+        if column_type == "bool":
+            if column_value.lower() in ["true", "false"]:
+                new_data[column_name] = column_value
+            else:
+                raise ValueError("Передано значение не подходящего типа")
+        
+        if column_type == "int":
+            try:
+                new_data[column_name] = int(column_value)
+            except:
+                raise ValueError("Передано значение не подходящего типа")
+                
+        new_data[column_name] = column_value
     
+    table_data.append(new_data)
+    return table_data
     
-    
-    pass
 
 def select(table_data, where_clause=None):
     """
