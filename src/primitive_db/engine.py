@@ -1,6 +1,6 @@
 import shlex
 import prompt
-from . import core, utils
+from . import core, utils, parser
 
 
 def print_help():
@@ -65,8 +65,10 @@ def run():
                 print(str("\n").join([f'- {table}' for table in actual_metadata.keys()]))
                 
             case "insert":
-                table_data = core.insert(actual_metadata, args[1], args[2:])
-                utils.save_table_data(args[1], table_data)
+                table_name, values = parser.parse_insert(args)
+                table_data = utils.load_table_data(table_name)
+                upd_table_data = core.insert(actual_metadata, table_name, table_data, values)
+                utils.save_table_data(table_name, upd_table_data)
             case "select":
                 table_data = utils.load_table_data(args[1])
                 selection = core.select(table_data, {}) # TODO: parse

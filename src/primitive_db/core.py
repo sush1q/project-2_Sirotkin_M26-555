@@ -58,7 +58,7 @@ def drop_table(metadata: dict, table_name: str):
     upd_metadata.pop(table_name)
     return upd_metadata
 
-def insert(metadata:dict, table_name:str, values:list):
+def insert(metadata:dict, table_name:str, table_data:list, values:list):
     """
     Проверяет, существует ли таблица.
     Проверяет, что количество переданных значений соответствует количеству столбцов (минус ID).
@@ -66,8 +66,16 @@ def insert(metadata:dict, table_name:str, values:list):
     Генерирует новый ID (например, max(IDs) + 1 или len(data) + 1).
     Добавляет новую запись (в виде словаря) в данные таблицы и возвращает их.
     """
-    if table_name in metadata:
+    if table_name not in metadata:
         raise TableNotExistsError(table_name)
+    table_header = metadata[table_name]
+    table_header.pop("ID")
+    
+    if len(values) != len(table_header):
+        # raise 
+        pass # TODO
+    
+    
     
     
     pass
