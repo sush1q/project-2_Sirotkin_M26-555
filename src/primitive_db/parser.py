@@ -1,4 +1,5 @@
 
+# insert into users values ( "Sergei A" , 28 , true )
 def parse_insert(command:list):
     values = "".join(command[4:])
 
@@ -8,5 +9,17 @@ def parse_insert(command:list):
     table_name = command[2]
     return (table_name, values[1:-1].split(","))
 
-
-# insert into users values ( "Sergei A" , 28 , true )
+# select from users where age = 28
+# select from users
+def parse_select(command: list):
+    should_be_clause = len(command) > 3
+    
+    if command[0] != 'select' or command[1] != 'from' or (should_be_clause and (len(command) not in [3,7] or command[3] != 'where' or command[5] != '=')):
+        raise ValueError("Переданная команда не соответсвует формату select")
+    
+    table_name = command[2]
+    clause = {}
+    if should_be_clause:
+        clause[command[4]] = command[6]
+    
+    return (table_name, clause)

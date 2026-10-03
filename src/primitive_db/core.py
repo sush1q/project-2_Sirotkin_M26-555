@@ -86,13 +86,13 @@ def insert(metadata:dict, table_name:str, table_data:list, values:list):
             if column_value.lower() in ["true", "false"]:
                 new_data[column_name] = bool(column_value)
             else:
-                raise ValueError("Передано значение не подходящего типа")
+                raise ValueError("Передано значение неподходящего типа")
         
         if column_type == 'int':
             try:
                 new_data[column_name] = int(column_value)
             except:
-                raise ValueError("Передано значение не подходящего типа")
+                raise ValueError("Передано значение неподходящего типа")
         if column_type == 'str':
             new_data[column_name] = column_value
     
@@ -105,7 +105,10 @@ def select(table_data, where_clause=None):
     Если where_clause не задан, возвращает все данные.
     Если задан (например, {'age': 28}), фильтрует и возвращает только подходящие записи.
     """
-    pass
+    if where_clause is None or where_clause == {}:
+        return table_data
+    
+    
 
 def update(table_data, set_clause, where_clause):
     """

@@ -1,5 +1,6 @@
 import shlex
 import prompt
+import prettytable
 from . import core, utils, parser
 
 
@@ -70,9 +71,15 @@ def run():
                 upd_table_data = core.insert(actual_metadata, table_name, table_data, values)
                 utils.save_table_data(table_name, upd_table_data)
             case "select":
-                table_data = utils.load_table_data(args[1])
-                selection = core.select(table_data, {}) # TODO: parse
-                print(selection)
+                table_name, clause = parser.parse_select(args)
+                table_data = utils.load_table_data(table_name)
+                selection = core.select(table_data, clause)
+                
+                table = prettytable.PrettyTable()
+                if selection != []:
+                    table.field_names = selection[0].keys()
+                    table.add_rows([i.values() for i in selection])
+                print(table)
             case "update":
                 table_data = utils.load_table_data(args[1])
                 core.update(table_data, {}, {}) # TODO
