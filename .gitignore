@@ -219,3 +219,7 @@ __marimo__/
 
 # vscode
 .vscode/*
+
+# project
+db_meta.json
+data
