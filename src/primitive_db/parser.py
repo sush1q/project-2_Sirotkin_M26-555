@@ -1,5 +1,6 @@
 
 # insert into users values ( "Sergei A" , 28 , true )
+# insert into users values ( 'Sergei B', 30, false  )
 def parse_insert(command:list):
     values = "".join(command[4:])
 

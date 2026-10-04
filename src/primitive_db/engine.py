@@ -39,7 +39,7 @@ def run():
         actual_metadata = utils.load_metadata(db_file)
         user_input = prompt.string("Введите команду: ")
         
-        args = shlex.split(user_input)
+        args = shlex.split(user_input, posix=False)
 
         match args[0]:
             case "create_table":

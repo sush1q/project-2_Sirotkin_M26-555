@@ -98,29 +98,39 @@ def insert(metadata:dict, table_name:str, table_data:list, values:list):
     
     table_data.append(new_data)
     return table_data
-    
 
-def select(table_data, where_clause=None):
+def select(table_data:list, where_clause:dict=None):
     """
     Если where_clause не задан, возвращает все данные.
     Если задан (например, {'age': 28}), фильтрует и возвращает только подходящие записи.
     """
     if where_clause is None or where_clause == {}:
         return table_data
-    
-    
+    return [row for row in table_data if all([row.get(k) == v for k,v in where_clause.items()])]
 
-def update(table_data, set_clause, where_clause):
+def update(table_data:list, set_clause:dict, where_clause:dict):
     """
     Находит записи по where_clause.
     Обновляет в найденных записях поля согласно set_clause.
     Возвращает измененные данные.
     """
-    pass
+    data_to_update = select(table_data, where_clause)
+    upd_table_data = table_data.copy()
 
-def delete(table_data, where_clause):
+    for row in upd_table_data:
+        if row not in data_to_update:
+            continue
+        for k, v in set_clause.items():
+            if type(row[k]) != type(v):
+                raise ValueError("Переданный тип не соответсвует типу колонки таблицы")
+        row.update(set_clause)
+
+    return upd_table_data
+
+def delete(table_data:list, where_clause:dict):
     """
     Находит записи по where_clause и удаляет их.
     Возвращает измененные данные.
     """
-    pass
+    data_to_delete = select(table_data, where_clause)
+    return [i for i in table_data if i not in data_to_delete]
