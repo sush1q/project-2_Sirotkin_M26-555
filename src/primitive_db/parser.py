@@ -19,8 +19,29 @@ def parse_select(command: list):
         raise ValueError("Переданная команда не соответсвует формату select")
     
     table_name = command[2]
-    clause = {}
+    clause = None
     if should_be_clause:
+        clause = {}
         clause[command[4]] = command[6]
     
     return (table_name, clause)
+
+# update users set age = 29 where name = "Sergei"
+def parse_update(command:list):
+    if command[0] != 'update' or command[2] != 'set' or command[6] != 'where' or command[4] != '=' or command[8] != '=':
+        raise ValueError("Переданная команда не соответсвует формату update")
+
+    table_name = command[1]
+    set_clause = {command[3]: command[5]}
+    where_clause = {command[7]: command[9]}
+    
+    return (table_name, set_clause, where_clause)
+
+# delete from users where ID = 1
+def parse_delete(command:list):
+    if command[0] != 'delete' or command[1] != 'from' or command[3] != 'where' or command[5] != '=':
+        raise ValueError("Переданная команда не соответсвует формату delete")
+    table_name = command[1]
+    where_clause = {command[4]: command[6]}
+    
+    return (table_name, where_clause)

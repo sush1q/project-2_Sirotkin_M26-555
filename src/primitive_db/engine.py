@@ -64,7 +64,7 @@ def run():
 
             case "list_tables":
                 print(str("\n").join([f'- {table}' for table in actual_metadata.keys()]))
-                
+
             case "insert":
                 table_name, values = parser.parse_insert(args)
                 table_data = utils.load_table_data(table_name)
@@ -81,13 +81,19 @@ def run():
                     table.add_rows([i.values() for i in selection])
                 print(table)
             case "update":
-                table_data = utils.load_table_data(args[1])
-                core.update(table_data, {}, {}) # TODO
+                table_name, set_clause, where_clause = parser.parse_update(args)
+                table_data = utils.load_table_data(table_name)
+                core.update(table_data, set_clause, where_clause)
             case "delete":
-                table_data = utils.load_table_data(args[1])
-                core.delete(table_data, {}) # TODO
+                table_name, where_clause = parser.parse_delete(args)
+                table_data = utils.load_table_data(table_name)
+                core.delete(table_data, where_clause)
             case "info":
                 table_data = utils.load_table_data(args[1])
+                print(f"Таблица: {args[1]}\n"\
+                    f"Столбцы: {", ".join([f"{k}:{v}" for k, v in actual_metadata[args[1]].items()])}\n"\
+                    f"Количество записей: {len(table_data)}\n"
+                )
                 
             case "help":
                 print_help()
