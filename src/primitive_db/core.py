@@ -1,3 +1,5 @@
+from . import decorators
+
 
 class DBError(Exception):
     pass
@@ -49,6 +51,7 @@ def create_table(metadata:dict, table_name: str, columns: list):
     upd_metadata[table_name] = table_data
     return upd_metadata
 
+@decorators.confirm_action("удаление таблицы")
 def drop_table(metadata: dict, table_name: str):
     """
     Проверяет существование таблицы. Если таблицы нет, выводит ошибку.
@@ -128,6 +131,7 @@ def update(table_data:list, set_clause:dict, where_clause:dict):
 
     return upd_table_data
 
+@decorators.confirm_action("удаление записи")
 def delete(table_data:list, where_clause:dict):
     """
     Находит записи по where_clause и удаляет их.
