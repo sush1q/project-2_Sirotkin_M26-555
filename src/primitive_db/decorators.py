@@ -1,5 +1,7 @@
+import time
 import prompt
 from functools import wraps
+from . import exceptions
 
 
 def handle_db_errors(func):
@@ -10,9 +12,10 @@ def handle_db_errors(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        # TODO: либо удалить свои эксепшнены, либо расширить логику тут
         try:
             return func(*args, **kwargs)
+        except (exceptions.DBError, exceptions.ArgumentError) as e:
+            print(e)
         except FileNotFoundError:
             print("Ошибка: Файл данных не найден. Возможно, база данных не инициализирована.")
         except KeyError as e:
@@ -30,6 +33,28 @@ def confirm_action(action_name):
             user_input = prompt.string(f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: ')
             if user_input.lower() != 'y':
                 return
-            return func(args, kwargs)
-        real_wrapper
+            return func(*args, **kwargs)
+        return real_wrapper
     return wrapper
+
+def log_time(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.monotonic()
+        ret = func(*args, **kwargs)
+        finish = time.monotonic()
+        
+        print(f'Функция {func.__name__} выполнилась за {finish - start} секунд')
+        return ret 
+    return wrapper
+
+def create_cacher():
+    cache = {}
+    def cache_result(key, value_func):
+        nonlocal cache
+        if cache.get(key) is not None:
+            return cache[key]
+        ret = value_func()
+        cache[key] = ret
+        return ret
+    return cache_result
