@@ -1,6 +1,5 @@
 import time
 import prompt
-from . import exceptions
 
 
 def handle_db_errors(func):
@@ -12,8 +11,6 @@ def handle_db_errors(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except (exceptions.DBError, exceptions.ArgumentError) as e:
-            print(e)
         except FileNotFoundError:
             print("Ошибка: Файл данных не найден. Возможно, база данных не инициализирована.")
         except KeyError as e:
@@ -33,8 +30,8 @@ def confirm_action(action_name):
             if user_input.lower() != 'y':
                 return
             return func(*args, **kwargs)
-        wrapper.__name__ = func.__name__
-        wrapper.__doc__ = func.__doc__  
+        real_wrapper.__name__ = func.__name__
+        real_wrapper.__doc__ = func.__doc__
         return real_wrapper
     return wrapper
 
@@ -53,7 +50,7 @@ def log_time(func):
 def create_cacher():
     cache = {}
     def cache_result(key, value_func):
-        if cache.get(key) is not None:
+        if key in cache:
             return cache[key]
         cache[key] = value_func()
         return cache[key] 

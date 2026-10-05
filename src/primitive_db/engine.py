@@ -1,7 +1,6 @@
-import shlex
 import prompt
 import prettytable
-from . import core, utils, parser, constants
+from . import core, utils, parser, constants, decorators
 
 
 def print_help():
@@ -22,81 +21,101 @@ def print_help():
     print("<command> exit - выход из программы")
     print("<command> help - справочная информация\n")
 
-def run():
-    """
-    Загружайте актуальные метаданные с помощью load_metadata.
-    Запрашивайте ввод у пользователя.
-    Разбирайте введенную строку на команду и аргументы.
-    Подсказка: Для надежного разбора строки используйте библиотеку shlex. args = shlex.split(user_input).
-    Используйте if/elif/else или match/case для вызова соответствующей функции из core.py.
-    После каждой успешной операции (create_table, drop_table) сохраняйте измененные метаданные с помощью save_metadata.
-    """
-    print("***База данных***")
-    print_help()
-    
-    while True:
-        actual_metadata = utils.load_metadata(constants.META_FILE)
-        user_input = prompt.string("Введите команду: ")
-        
-        args = shlex.split(user_input, posix=False)
-        match args[0]:
-            case "create_table":
-                upd_metadata = core.create_table(actual_metadata, args[1], args[2:])
-                if upd_metadata is not None:
-                    utils.save_metadata(constants.META_FILE, upd_metadata)
-                    print(f'Таблица "{args[1]}" успешно создана со столбцами: {", ".join([f'{k}:{v}' for k,v in upd_metadata[args[1]].items()])}')
+@decorators.handle_db_errors
+def execute_command(user_input:str):
+    args = parser.tokenize(user_input)
+    if not args:
+        return
+    if args[0] in ["help", "exit", "list_tables"] and len(args) != 1:
+        raise ValueError("Команда не принимает аргументы")
+    if args[0] in ["drop_table", "info"] and len(args) != 2:
+        raise ValueError("Укажите имя таблицы")
+    if args[0] == "create_table" and len(args) < 3:
+        raise ValueError("Укажите имя таблицы и столбцы")
 
-            case "drop_table":
-                upd_metadata = core.drop_table(actual_metadata, args[1])
-                if upd_metadata is not None:
-                    utils.save_metadata(constants.META_FILE, upd_metadata)
-                    print(f'Таблица "{args[1]}" успешно удалена.')
+    if args[0] == "exit":
+        return 0
+    if args[0] == "help":
+        print_help()
+        return
 
-            case "list_tables":
-                print(str("\n").join([f'- {table}' for table in actual_metadata.keys()]))
+    actual_metadata = utils.load_metadata(constants.META_FILE)
+    match args[0]:
+        case "create_table":
+            upd_metadata = core.create_table(actual_metadata, args[1], args[2:])
+            if upd_metadata is not None:
+                utils.save_metadata(constants.META_FILE, upd_metadata)
+                print(f'Таблица "{args[1]}" успешно создана со столбцами: {", ".join([f'{k}:{v}' for k,v in upd_metadata[args[1]].items()])}')
 
-            case "insert":
-                table_name, values = parser.parse_insert(args)
-                table_data = utils.load_table_data(table_name)
-                upd_table_data = core.insert(actual_metadata, table_name, table_data, values)
-                if upd_table_data is not None:
-                    utils.save_table_data(table_name, upd_table_data)
-                    
-            case "select":
-                table_name, clause = parser.parse_select(args)
-                table_data = utils.load_table_data(table_name)
-                selection = core.select(table_data, clause)
-                
+        case "drop_table":
+            upd_metadata = core.drop_table(actual_metadata, args[1])
+            if upd_metadata is not None:
+                utils.delete_table(args[1])
+                utils.save_metadata(constants.META_FILE, upd_metadata)
+                print(f'Таблица "{args[1]}" успешно удалена.')
+
+        case "list_tables":
+            print(str("\n").join([f'- {table}' for table in actual_metadata.keys()]))
+
+        case "insert":
+            table_name, values = parser.parse_insert(args)
+            table_data = utils.load_table_data(table_name)
+            upd_table_data = core.insert(actual_metadata, table_name, table_data, values)
+            if upd_table_data is not None:
+                utils.save_table_data(table_name, upd_table_data)
+
+        case "select":
+            table_name, clause = parser.parse_select(args)
+            table_header = core.get_table_header(actual_metadata, table_name)
+            core.check_clause(table_header, clause)
+            table_data = utils.load_table_data(table_name)
+            selection = core.select(table_data, clause)
+            if selection is not None:
                 table = prettytable.PrettyTable()
-                if selection != []:
-                    table.field_names = selection[0].keys()
-                    table.add_rows([i.values() for i in selection])
-                print(table)
-                
-            case "update":
-                table_name, set_clause, where_clause = parser.parse_update(args)
-                table_data = utils.load_table_data(table_name)
-                upd_table_data = core.update(table_data, set_clause, where_clause)
-                if upd_table_data is not None:
-                    utils.save_table_data(table_name, upd_table_data)
-
-            case "delete":
-                table_name, where_clause = parser.parse_delete(args)
-                table_data = utils.load_table_data(table_name)
-                upd_table_data = core.delete(table_data, where_clause)
-                if upd_table_data is not None:
-                    utils.save_table_data(table_name, upd_table_data)
-
-            case "info":
-                table_data = utils.load_table_data(args[1])
-                print(f"Таблица: {args[1]}\n"\
-                    f"Столбцы: {", ".join([f"{k}:{v}" for k, v in actual_metadata[args[1]].items()])}\n"\
-                    f"Количество записей: {len(table_data)}\n"
+                table.field_names = table_header.keys()
+                table.add_rows(
+                    [[row[column] for column in table_header] for row in selection]
                 )
+                print(table)
 
-            case "help":
-                print_help()
-            case "exit":
+        case "update":
+            table_name, set_clause, where_clause = parser.parse_update(args)
+            table_header = core.get_table_header(actual_metadata, table_name)
+            core.check_clause(table_header, set_clause)
+            core.check_clause(table_header, where_clause)
+            table_data = utils.load_table_data(table_name)
+            upd_table_data = core.update(table_data, set_clause, where_clause)
+            if upd_table_data is not None:
+                utils.save_table_data(table_name, upd_table_data)
+
+        case "delete":
+            table_name, where_clause = parser.parse_delete(args)
+            table_header = core.get_table_header(actual_metadata, table_name)
+            core.check_clause(table_header, where_clause)
+            table_data = utils.load_table_data(table_name)
+            upd_table_data = core.delete(table_data, where_clause)
+            if upd_table_data is not None:
+                utils.save_table_data(table_name, upd_table_data)
+
+        case "info":
+            table_header = core.get_table_header(actual_metadata, args[1])
+            table_data = utils.load_table_data(args[1])
+            print(f"Таблица: {args[1]}\n"\
+                f"Столбцы: {", ".join([f"{k}:{v}" for k, v in table_header.items()])}\n"\
+                f"Количество записей: {len(table_data)}\n"
+            )
+
+        case _:
+            print(f"Функции {args[0]} нет. Попробуйте снова.")
+
+
+def run():
+    print_help()
+
+    while True:
+        try:
+            user_input = prompt.string("Введите команду: ", empty=True)
+            if execute_command(user_input or "") == 0:
                 return 0
-            case _:
-                print(f"Функции {args[0]} нет. Попробуйте снова.")
+        except (EOFError, KeyboardInterrupt):
+            return 0
