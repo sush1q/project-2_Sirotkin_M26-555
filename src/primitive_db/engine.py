@@ -1,7 +1,7 @@
 import shlex
 import prompt
 import prettytable
-from . import core, utils, parser
+from . import core, utils, parser, constants
 
 
 def print_help():
@@ -35,8 +35,7 @@ def run():
     print_help()
     
     while True:
-        db_file = "db_meta.json"
-        actual_metadata = utils.load_metadata(db_file)
+        actual_metadata = utils.load_metadata(constants.META_FILE)
         user_input = prompt.string("Введите команду: ")
         
         args = shlex.split(user_input, posix=False)
@@ -44,13 +43,13 @@ def run():
             case "create_table":
                 upd_metadata = core.create_table(actual_metadata, args[1], args[2:])
                 if upd_metadata is not None:
-                    utils.save_metadata(db_file, upd_metadata)
+                    utils.save_metadata(constants.META_FILE, upd_metadata)
                     print(f'Таблица "{args[1]}" успешно создана со столбцами: {", ".join([f'{k}:{v}' for k,v in upd_metadata[args[1]].items()])}')
 
             case "drop_table":
                 upd_metadata = core.drop_table(actual_metadata, args[1])
                 if upd_metadata is not None:
-                    utils.save_metadata(db_file, upd_metadata)
+                    utils.save_metadata(constants.META_FILE, upd_metadata)
                     print(f'Таблица "{args[1]}" успешно удалена.')
 
             case "list_tables":
