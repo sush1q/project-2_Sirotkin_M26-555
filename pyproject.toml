@@ -1,7 +1,7 @@
 [project]
 name = "project-2-sirotkin-m26-555"
 version = "0.1.0"
-description = ""
+description = "Учебная примитивная база данных"
 authors = [
     {name = "sush1",email = "pavelsirotkin17@yandex.ru"}
 ]
