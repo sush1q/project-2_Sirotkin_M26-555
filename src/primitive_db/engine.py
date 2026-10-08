@@ -3,6 +3,14 @@ import prompt
 
 from . import constants, core, decorators, parser, utils
 
+cache_select = decorators.create_cacher()
+
+
+def clear_select_cache():
+    """Сбрасывает результаты выборок после изменения данных."""
+    global cache_select
+    cache_select = decorators.create_cacher()
+
 
 def print_help():
     """Prints the help message for the current mode."""
@@ -59,6 +67,7 @@ def execute_command(user_input:str):
             upd_metadata = core.create_table(actual_metadata, args[1], args[2:])
             if upd_metadata is not None:
                 utils.save_metadata(constants.META_FILE, upd_metadata)
+                clear_select_cache()
                 print(
                     f'Таблица "{args[1]}" успешно создана со столбцами: '
                     f'{", ".join(
@@ -71,6 +80,7 @@ def execute_command(user_input:str):
             if upd_metadata is not None:
                 utils.delete_table(args[1])
                 utils.save_metadata(constants.META_FILE, upd_metadata)
+                clear_select_cache()
                 print(f'Таблица "{args[1]}" успешно удалена.')
 
         case "list_tables":
@@ -84,6 +94,7 @@ def execute_command(user_input:str):
             )
             if upd_table_data is not None:
                 utils.save_table_data(table_name, upd_table_data)
+                clear_select_cache()
                 row_id = upd_table_data[-1][constants.ID_COLUMN]
                 print(
                     f'Запись с ID={row_id} успешно добавлена '
@@ -95,7 +106,10 @@ def execute_command(user_input:str):
             table_header = core.get_table_header(actual_metadata, table_name)
             core.check_clause(table_header, clause)
             table_data = utils.load_table_data(table_name)
-            selection = core.select(table_data, clause)
+            selection = cache_select(
+                user_input,
+                lambda: core.select(table_data, clause),
+            )
             if selection is not None:
                 table = prettytable.PrettyTable()
                 table.field_names = table_header.keys()
@@ -103,6 +117,8 @@ def execute_command(user_input:str):
                     [[row[column] for column in table_header] for row in selection]
                 )
                 print(table)
+            else:
+                clear_select_cache()
 
         case "update":
             table_name, set_clause, where_clause = parser.parse_update(args)
@@ -113,6 +129,7 @@ def execute_command(user_input:str):
             upd_table_data = core.update(table_data, set_clause, where_clause)
             if upd_table_data is not None:
                 utils.save_table_data(table_name, upd_table_data)
+                clear_select_cache()
                 for row in table_data:
                     if all(row.get(k) == v for k, v in where_clause.items()):
                         row_id = row[constants.ID_COLUMN]
@@ -129,6 +146,7 @@ def execute_command(user_input:str):
             upd_table_data = core.delete(table_data, where_clause)
             if upd_table_data is not None:
                 utils.save_table_data(table_name, upd_table_data)
+                clear_select_cache()
                 for row in table_data:
                     if row not in upd_table_data:
                         row_id = row[constants.ID_COLUMN]
@@ -152,6 +170,7 @@ def execute_command(user_input:str):
 
 def run():
     """Принимает команды до exit, конца ввода или прерывания пользователем."""
+    clear_select_cache()
     print_help()
 
     while True:
