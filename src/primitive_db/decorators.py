@@ -26,7 +26,7 @@ def handle_db_errors(func):
 def confirm_action(action_name):
     def wrapper(func):
         def real_wrapper(*args, **kwargs):
-            user_input = prompt.string(f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: ')
+            user_input = prompt.string(f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: ', empty=True)
             if user_input.lower() != 'y':
                 return
             return func(*args, **kwargs)
