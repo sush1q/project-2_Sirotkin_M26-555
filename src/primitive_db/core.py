@@ -1,137 +1,120 @@
+from . import constants, decorators
 
-class DBError(Exception):
-    pass
 
-class TableExistsError(DBError):
-    def __init__(self, table_name):
-        self.table_name = table_name
-    def __str__(self):
-        return f'Ошибка: Таблица "{self.table_name}" уже существует.'
+def get_table_header(metadata:dict, table_name:str):
+    """Получить схему таблицы, если таблицы нет - вызывает исключение"""
+    if table_name not in metadata:
+        raise ValueError(f'Таблица "{table_name}" не существует.')
+    return metadata[table_name]
 
-class TableNotExistsError(DBError):
-    def __init__(self, table_name):
-        self.table_name = table_name
-    def __str__(self):
-        return f'Ошибка: Таблица "{self.table_name}" не существует.'
+def check_clause(table_header:dict, clause:dict):
+    """Проверяет столбцы и типы значений условия по схеме таблицы"""
+    for column_name, value in (clause or {}).items():
+        if column_name not in table_header:
+            raise KeyError(column_name)
+        if type(value).__name__ != table_header[column_name]:
+            raise ValueError(f'Неверный тип значения столбца "{column_name}"')
 
-class TableArgumentsError(DBError):
-    def __init__(self, args):
-        self.args = args
-    def __str__(self):
-        return f'Ошибка: Указаны некорректные типы для параметров "{self.args}".'
-
-ALLOWED_TYPES = ["str", "bool", "int"]
-
+@decorators.handle_db_errors
 def create_table(metadata:dict, table_name: str, columns: list):
-    """
-    Она должна принимать текущие метаданные, имя таблицы и список столбцов.
-    Автоматически добавлять столбец ID:int в начало списка столбцов.
-    Проверять, не существует ли уже таблица с таким именем. Если да, выводить ошибку.
-    Проверять корректность типов данных (только int, str, bool).
-    В случае успеха, обновлять словарь metadata и возвращать его.
-    !!! В случае, если столбец ID(уникальный ключ) не задается пользователем, то генерировать его самостоятельно.
-    """
-    if metadata.get(table_name) is not None:
-        raise TableExistsError(table_name)
-    inner_columns = columns.copy()
-    
-    id_column = "ID:int"
-    if inner_columns.count(id_column):
-        inner_columns.remove(id_column)
-    inner_columns.insert(0, id_column)
-    
-    table_data = dict({column.split(":")[0]: column.split(":")[1]  for column in inner_columns})
-    type_errors = [{k:v} for k,v in table_data.items() if v not in ALLOWED_TYPES]
-    if type_errors:
-        raise TableArgumentsError(type_errors)
+    """Проверяет схему и возвращает метаданные с новой таблицей и столбцом ID."""
+    if table_name in metadata:
+        raise ValueError(f'Таблица "{table_name}" уже существует.')
+
+    table_data = {constants.ID_COLUMN: constants.ID_TYPE}
+    seen_columns = set()
+    for column in columns:
+        parts = column.split(":")
+        if len(parts) != 2:
+            raise ValueError(f'Некорректное описание столбца: {column}')
+        column_name, column_type = parts
+        if column_name in seen_columns:
+            raise ValueError(f'Повторяющийся столбец: {column_name}')
+        if column_type not in constants.ALLOWED_TYPES:
+            raise ValueError(f'Некорректный тип столбца: {column_type}')
+        if column_name == constants.ID_COLUMN and column_type != constants.ID_TYPE:
+            raise ValueError("Столбец ID должен иметь тип int")
+        seen_columns.add(column_name)
+        table_data[column_name] = column_type
     
     upd_metadata = metadata.copy()
     upd_metadata[table_name] = table_data
     return upd_metadata
 
+@decorators.confirm_action("удаление таблицы")
+@decorators.handle_db_errors
 def drop_table(metadata: dict, table_name: str):
-    """
-    Проверяет существование таблицы. Если таблицы нет, выводит ошибку.
-    Удаляет информацию о таблице из metadata и возвращает обновленный словарь.
-    """
-    if metadata.get(table_name) is None:
-        raise TableNotExistsError(table_name)
+    """Возвращает метаданные без указанной таблицы после проверки её наличия."""
+    get_table_header(metadata, table_name)
     upd_metadata = metadata.copy()
     upd_metadata.pop(table_name)
     return upd_metadata
 
+@decorators.log_time
+@decorators.handle_db_errors
 def insert(metadata:dict, table_name:str, table_data:list, values:list):
-    """
-    Проверяет, существует ли таблица.
-    Проверяет, что количество переданных значений соответствует количеству столбцов (минус ID).
-    Валидирует типы данных для каждого значения в соответствии со схемой в metadata.
-    Генерирует новый ID (например, max(IDs) + 1 или len(data) + 1).
-    Добавляет новую запись (в виде словаря) в данные таблицы и возвращает их.
-    """
-    if table_name not in metadata:
-        raise TableNotExistsError(table_name)
-    table_header = metadata[table_name]
-    table_header.pop("ID")
+    """Проверяет значения, добавляет запись с новым ID и возвращает данные."""
+    table_header = get_table_header(metadata, table_name)
+    table_header.pop(constants.ID_COLUMN)
     
     if len(values) != len(table_header):
         raise ValueError("Передано неверное количество значений")
     
     new_data = {}
-    new_data['ID'] = max([i['ID'] for i in table_data]) + 1
+    new_data[constants.ID_COLUMN] = max(
+        [i[constants.ID_COLUMN] for i in table_data], default=0
+    ) + 1
     for i, item in enumerate(table_header.items()):
         column_name, column_type = item
         column_value = values[i]
         
-        if column_type == 'bool':
-            if column_value.lower() not in ["true", "false"]:
-                raise ValueError("Передано значение неподходящего типа")
-            new_data[column_name] = bool(column_value)
-        
-        if column_type == 'int':
-            try:
-                new_data[column_name] = int(column_value)
-            except:
-                raise ValueError("Передано значение неподходящего типа")
-        if column_type == 'str':
-            if column_value[0] != '"' or column_value[-1] != '"':
-                raise ValueError("Передано значение неподходящего типа")
-            new_data[column_name] = column_value[1:-1]
+        if type(column_value).__name__ != column_type:
+            raise ValueError(f'Неверный тип значения столбца "{column_name}"')
+        new_data[column_name] = column_value
     
     table_data.append(new_data)
     return table_data
 
+@decorators.log_time
+@decorators.handle_db_errors
 def select(table_data:list, where_clause:dict=None):
-    """
-    Если where_clause не задан, возвращает все данные.
-    Если задан (например, {'age': 28}), фильтрует и возвращает только подходящие записи.
-    """
+    """Возвращает все записи или записи, подходящие под условие where."""
     if where_clause is None or where_clause == {}:
         return table_data
-    return [row for row in table_data if all([row.get(k) == v for k,v in where_clause.items()])]
+    return [
+        row for row in table_data
+        if all([row.get(k) == v for k,v in where_clause.items()])
+    ]
 
+@decorators.handle_db_errors
 def update(table_data:list, set_clause:dict, where_clause:dict):
-    """
-    Находит записи по where_clause.
-    Обновляет в найденных записях поля согласно set_clause.
-    Возвращает измененные данные.
-    """
+    """Обновляет поля подходящих записей и возвращает изменённые данные."""
+    if not set_clause or not where_clause:
+        raise ValueError("Для обновления нужны условия set и where")
+    if constants.ID_COLUMN in set_clause:
+        raise ValueError("Изменение ID запрещено")
     data_to_update = select(table_data, where_clause)
-    upd_table_data = table_data.copy()
+    if data_to_update is None:
+        return
+    upd_table_data = [row.copy() for row in table_data]
 
     for row in upd_table_data:
         if row not in data_to_update:
             continue
         for k, v in set_clause.items():
-            if type(row[k]) != type(v):
+            if type(row[k]) is not type(v):
                 raise ValueError("Переданный тип не соответсвует типу колонки таблицы")
         row.update(set_clause)
 
     return upd_table_data
 
+@decorators.confirm_action("удаление записи")
+@decorators.handle_db_errors
 def delete(table_data:list, where_clause:dict):
-    """
-    Находит записи по where_clause и удаляет их.
-    Возвращает измененные данные.
-    """
+    """Возвращает данные без записей, подходящих под условие where."""
+    if not where_clause:
+        raise ValueError("Для удаления нужно условие where")
     data_to_delete = select(table_data, where_clause)
+    if data_to_delete is None:
+        return
     return [i for i in table_data if i not in data_to_delete]

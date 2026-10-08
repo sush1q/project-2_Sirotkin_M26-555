@@ -1,7 +1,7 @@
 [project]
 name = "project-2-sirotkin-m26-555"
 version = "0.1.0"
-description = ""
+description = "Учебная примитивная база данных"
 authors = [
     {name = "sush1",email = "pavelsirotkin17@yandex.ru"}
 ]
@@ -23,12 +23,12 @@ requires = ["uv_build>=0.12.15,<0.13.0"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
-module-name = "src"
-module-root = ""
+module-name = "primitive_db"
+module-root = "src"
 
 [project.scripts]
-project = "src.primitive_db.main:main"
-database = "src.primitive_db.main:main"
+project = "primitive_db.main:main"
+database = "primitive_db.main:main"
 
 [tool.ruff]
 line-length = 88
