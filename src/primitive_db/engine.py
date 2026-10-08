@@ -23,6 +23,7 @@ def print_help():
 
 @decorators.handle_db_errors
 def execute_command(user_input:str):
+    """Разбирает и выполняет команду; возвращает 0 для выхода из программы."""
     args = parser.tokenize(user_input)
     if not args:
         return
@@ -63,6 +64,8 @@ def execute_command(user_input:str):
             upd_table_data = core.insert(actual_metadata, table_name, table_data, values)
             if upd_table_data is not None:
                 utils.save_table_data(table_name, upd_table_data)
+                row_id = upd_table_data[-1][constants.ID_COLUMN]
+                print(f'Запись с ID={row_id} успешно добавлена в таблицу "{table_name}".')
 
         case "select":
             table_name, clause = parser.parse_select(args)
@@ -87,6 +90,10 @@ def execute_command(user_input:str):
             upd_table_data = core.update(table_data, set_clause, where_clause)
             if upd_table_data is not None:
                 utils.save_table_data(table_name, upd_table_data)
+                for row in table_data:
+                    if all(row.get(k) == v for k, v in where_clause.items()):
+                        row_id = row[constants.ID_COLUMN]
+                        print(f'Запись с ID={row_id} в таблице "{table_name}" успешно обновлена.')
 
         case "delete":
             table_name, where_clause = parser.parse_delete(args)
@@ -96,6 +103,10 @@ def execute_command(user_input:str):
             upd_table_data = core.delete(table_data, where_clause)
             if upd_table_data is not None:
                 utils.save_table_data(table_name, upd_table_data)
+                for row in table_data:
+                    if row not in upd_table_data:
+                        row_id = row[constants.ID_COLUMN]
+                        print(f'Запись с ID={row_id} успешно удалена из таблицы "{table_name}".')
 
         case "info":
             table_header = core.get_table_header(actual_metadata, args[1])
@@ -110,6 +121,7 @@ def execute_command(user_input:str):
 
 
 def run():
+    """Принимает команды до exit, конца ввода или прерывания пользователем."""
     print_help()
 
     while True:

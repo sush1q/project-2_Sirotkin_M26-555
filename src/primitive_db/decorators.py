@@ -3,11 +3,7 @@ import prompt
 
 
 def handle_db_errors(func):
-    """
-    Создайте декоратор, который оборачивает вызов функции в блок try...except.
-    Он должен перехватывать как минимум KeyError (например, обращение к несуществующей таблице), ValueError (ошибки валидации типов) и FileNotFoundError.
-    Примените этот декоратор ко всем функциям в db_core, которые могут вызвать эти исключения. Теперь вам не нужно писать try...except в каждой из них.
-    """
+    """Перехватывает ошибки операции и выводит сообщение пользователю."""
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -24,6 +20,7 @@ def handle_db_errors(func):
     return wrapper
 
 def confirm_action(action_name):
+    """Запрашивает подтверждение перед выполнением указанного действия."""
     def wrapper(func):
         def real_wrapper(*args, **kwargs):
             user_input = prompt.string(f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: ', empty=True)
@@ -36,6 +33,7 @@ def confirm_action(action_name):
     return wrapper
 
 def log_time(func):
+    """Выводит время выполнения функции и возвращает её результат."""
     def wrapper(*args, **kwargs):
         start = time.monotonic()
         ret = func(*args, **kwargs)
@@ -48,6 +46,7 @@ def log_time(func):
     return wrapper
 
 def create_cacher():
+    """Возвращает функцию, хранящую результаты вычислений в замыкании."""
     cache = {}
     def cache_result(key, value_func):
         if key in cache:

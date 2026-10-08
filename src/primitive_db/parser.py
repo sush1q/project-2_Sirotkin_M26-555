@@ -42,15 +42,19 @@ def parse_clause(command:list):
 
 
 def parse_insert(command:list):
+    """Разбирает имя таблицы и значения команды insert."""
     if len(command) < 6 or command[:2] != ["insert", "into"] or command[3:5] != ["values", "("] or command[-1] != ")":
         raise ValueError("Переданная команда не соответствует формату insert")
 
     values = command[5:-1]
+    if values and len(values) % 2 == 0:
+        raise ValueError("После запятой должно быть значение")
     if any(value != "," for value in values[1::2]):
         raise ValueError("Между значениями должна быть запятая")
     return (command[2], [parse_value(value) for value in values[::2]])
 
 def parse_select(command:list):
+    """Разбирает команду select с необязательным условием where."""
     if len(command) not in [3, 7] or command[:2] != ["select", "from"]:
         raise ValueError("Переданная команда не соответствует формату select")
     clause = None
@@ -61,6 +65,7 @@ def parse_select(command:list):
     return (command[2], clause)
 
 def parse_update(command:list):
+    """Разбирает имя таблицы, присваивание set и условие where."""
     if len(command) != 10 or command[0] != "update" or command[2] != "set" or command[6] != "where":
         raise ValueError("Переданная команда не соответствует формату update")
 
@@ -71,6 +76,7 @@ def parse_update(command:list):
     return (table_name, set_clause, where_clause)
 
 def parse_delete(command:list):
+    """Разбирает команду delete с обязательным условием where."""
     if len(command) != 7 or command[:2] != ["delete", "from"] or command[3] != "where":
         raise ValueError("Переданная команда не соответствует формату delete")
     return (command[2], parse_clause(command[4:]))

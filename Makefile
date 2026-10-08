@@ -15,6 +15,3 @@ package-install:
 
 lint:
 	uv run ruff check .
-
-test:
-	uv run python -m pytest -v
