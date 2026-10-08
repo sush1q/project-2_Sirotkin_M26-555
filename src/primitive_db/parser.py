@@ -32,7 +32,9 @@ def parse_value(value:str):
     try:
         return int(value)
     except ValueError:
-        raise ValueError(f'Некорректное значение: {value}. Строки должны быть в кавычках.')
+        raise ValueError(
+            f'Некорректное значение: {value}. Строки должны быть в кавычках.'
+        )
 
 def parse_clause(command:list):
     """Разбирает одно условие вида столбец = значение."""
@@ -43,7 +45,12 @@ def parse_clause(command:list):
 
 def parse_insert(command:list):
     """Разбирает имя таблицы и значения команды insert."""
-    if len(command) < 6 or command[:2] != ["insert", "into"] or command[3:5] != ["values", "("] or command[-1] != ")":
+    if (
+        len(command) < 6
+        or command[:2] != ["insert", "into"]
+        or command[3:5] != ["values", "("]
+        or command[-1] != ")"
+    ):
         raise ValueError("Переданная команда не соответствует формату insert")
 
     values = command[5:-1]
@@ -66,7 +73,12 @@ def parse_select(command:list):
 
 def parse_update(command:list):
     """Разбирает имя таблицы, присваивание set и условие where."""
-    if len(command) != 10 or command[0] != "update" or command[2] != "set" or command[6] != "where":
+    if (
+        len(command) != 10
+        or command[0] != "update"
+        or command[2] != "set"
+        or command[6] != "where"
+    ):
         raise ValueError("Переданная команда не соответствует формату update")
 
     table_name = command[1]

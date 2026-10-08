@@ -1,4 +1,4 @@
-from . import decorators, constants
+from . import constants, decorators
 
 
 def get_table_header(metadata:dict, table_name:str):
@@ -61,7 +61,9 @@ def insert(metadata:dict, table_name:str, table_data:list, values:list):
         raise ValueError("Передано неверное количество значений")
     
     new_data = {}
-    new_data[constants.ID_COLUMN] = max([i[constants.ID_COLUMN] for i in table_data], default=0) + 1
+    new_data[constants.ID_COLUMN] = max(
+        [i[constants.ID_COLUMN] for i in table_data], default=0
+    ) + 1
     for i, item in enumerate(table_header.items()):
         column_name, column_type = item
         column_value = values[i]
@@ -79,7 +81,10 @@ def select(table_data:list, where_clause:dict=None):
     """Возвращает все записи или записи, подходящие под условие where."""
     if where_clause is None or where_clause == {}:
         return table_data
-    return [row for row in table_data if all([row.get(k) == v for k,v in where_clause.items()])]
+    return [
+        row for row in table_data
+        if all([row.get(k) == v for k,v in where_clause.items()])
+    ]
 
 @decorators.handle_db_errors
 def update(table_data:list, set_clause:dict, where_clause:dict):

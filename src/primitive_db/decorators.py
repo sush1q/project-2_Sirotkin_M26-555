@@ -1,4 +1,5 @@
 import time
+
 import prompt
 
 
@@ -8,7 +9,10 @@ def handle_db_errors(func):
         try:
             return func(*args, **kwargs)
         except FileNotFoundError:
-            print("Ошибка: Файл данных не найден. Возможно, база данных не инициализирована.")
+            print(
+                "Ошибка: Файл данных не найден. "
+                "Возможно, база данных не инициализирована."
+            )
         except KeyError as e:
             print(f"Ошибка: Таблица или столбец {e} не найден.")
         except ValueError as e:
@@ -23,7 +27,10 @@ def confirm_action(action_name):
     """Запрашивает подтверждение перед выполнением указанного действия."""
     def wrapper(func):
         def real_wrapper(*args, **kwargs):
-            user_input = prompt.string(f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: ', empty=True)
+            user_input = prompt.string(
+                f'Вы уверены, что хотите выполнить "{action_name}"? [y/n]: ',
+                empty=True,
+            )
             if user_input.lower() != 'y':
                 return
             return func(*args, **kwargs)
